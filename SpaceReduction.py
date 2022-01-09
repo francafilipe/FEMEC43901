@@ -22,13 +22,14 @@ def bisseccao(function='Default',interval=[-1e3, 1e3],delta=1e-3,tol=1e-3,N=100)
         
         # Stopping Criteria   
         if ((b-a)/2 <= tol):
+            iterations = i
             x_optimal = (a+b)/2
             f_optimal = ZDT(c, func=function)
             #print('Resultado p/ função', function,'usando o método Bisseção:\n x* = ',x_optimal,'& f(x*) = ',f_optimal)
             break
         i = i+1
 
-    return x_optimal, f_optimal
+    return x_optimal, f_optimal, iterations
 
 
 def golden_ratio(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
@@ -58,6 +59,7 @@ def golden_ratio(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
 
         # Stopping Criteria   
         if ((beta-alpha)/2 <= tol):
+            iterations = i
             x_optimal = (alpha+beta)/2
             f_optimal = ZDT(x_optimal, func=function)
             #print('Resultado p/ função', function,'usando o método Seção Aurea:
@@ -65,7 +67,7 @@ def golden_ratio(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
             break 
         i = i+1
 
-    return x_optimal, f_optimal
+    return x_optimal, f_optimal, iterations
 
 
 def fibonacci_method(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
@@ -96,6 +98,7 @@ def fibonacci_method(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
 
         # Stopping Criteria   
         if ((beta-alpha)/2 <= tol):
+            iterations = i
             x_optimal = (alpha+beta)/2
             f_optimal = ZDT(x_optimal, func=function)
             #print('Resultado p/ função', function,'usando o método Seção Aurea:
@@ -104,7 +107,7 @@ def fibonacci_method(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
         i   = i+1
         tal = fibonacci(N+i+1)/fibonacci(N+i+2)
 
-    return x_optimal, f_optimal
+    return x_optimal, f_optimal, iterations
 
 
 def fibonacci(index):
