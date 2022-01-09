@@ -1,4 +1,4 @@
-from numpy import linspace, polyfit, polyder, roots
+from numpy import linspace, polyfit, polyder, roots, zeros
 from numpy.lib.polynomial import polyder
 from support_funcs import *
 from zdt import *
@@ -127,6 +127,21 @@ def polinomialApproximation(function='Default',interval=[-1e3, 1e3],N=2):
 
     return x_optimal
 
-for N in range(2,6):
-    sol = polinomialApproximation(function='Default',interval=[0, 600],N=N)
-    print('Para N = ', N, 'as raízes são: ',sol)
+
+def Newton(function='Default',initial=0,tol=1e-3,N=100,h=1e-4):
+    x = zeros(N)
+    x[0] = initial
+    i = 0
+
+    while (i <= N):
+        f_dev1, f_dev2 = finiteDiff(function,x[i],h)
+        x[i+1] = x[i] - f_dev1/f_dev2
+        if (abs(x[i+1]-x[i]) <= tol):
+            iterations = i+1
+            x_optimal = x[i+1]
+            f_optimal = ZDT(x[i+1], func=function)
+            break
+        i = i+1
+
+    return x_optimal, f_optimal, iterations
+
