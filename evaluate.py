@@ -1,6 +1,6 @@
 # File used to test the implemented algorithms for each optimization method
 
-from SpaceReduction import *
+from Unconstrained1DMethods import *
 
 print('Função Default - Exemplo Apostila')
 print('Bisseção: ',     bisseccao('Default',[0, 600],0.2,1e-8,100))

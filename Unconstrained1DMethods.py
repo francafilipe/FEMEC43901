@@ -1,5 +1,7 @@
-from math import sqrt
+from support_funcs import *
 from zdt import *
+
+# Methods based on the reduction of the Search Space
 
 def bisseccao(function='Default',interval=[-1e3, 1e3],delta=1e-3,tol=1e-3,N=100):
     # Input Values
@@ -109,8 +111,3 @@ def fibonacci_method(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
 
     return x_optimal, f_optimal, iterations
 
-
-def fibonacci(index):
-    # Returns de value of the fibonacci series in the predefined index
-    value = (sqrt(5)/5)*(((1+sqrt(5))/2)**(index+1))-(sqrt(5)/5)*(((1-sqrt(5))/2)**(index+1))
-    return value
