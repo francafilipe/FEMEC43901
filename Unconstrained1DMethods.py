@@ -171,5 +171,28 @@ def LevenbergMarquardt(function='Default',x0=0,lamb0=1,tol=1e-3,N=100,h=1e-4):
 
     return x_optimal, f_optimal, iterations
 
-x_optimal, f_optimal, iterations = LevenbergMarquardt(function='Default',x0=300,tol=1e-8,N=100,h=1e-4)
+
+def Quasi_Newton(function='Default',x0=0,xp=0,tol=1e-3,N=100,h=1e-4):
+    f = zeros(N)
+    x = zeros(N)
+    x[0] = x0
+    f[0] = ZDT(x[0], func=function)
+    fp   = ZDT(xp, func=function)
+    fp_dev1, fp_dev2 = finiteDiff(function,xp,h)
+    i = 0
+
+    while (i <= N):
+        f_dev1, f_dev2 = finiteDiff(function,x[i],h)
+        x[i+1] = x[i] - f_dev1/((f_dev1-fp_dev1)/(x[i]-xp))
+        f[i+1] = ZDT(x[i+1], func=function)
+        if (abs(x[i+1]-x[i]) <= tol):
+            iterations = i+1
+            x_optimal = x[i+1]
+            f_optimal = f[i+1]
+            break
+        i = i+1
+
+    return x_optimal, f_optimal, iterations
+
+x_optimal, f_optimal, iterations = Quasi_Newton(function='Default',x0=300,xp=0,tol=1e-8,N=100,h=1e-4)
 print(x_optimal, '\n', f_optimal, '\n', iterations)
