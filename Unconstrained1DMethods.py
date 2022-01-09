@@ -113,6 +113,8 @@ def fibonacci_method(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
 
     return x_optimal, f_optimal, iterations
 
+
+
 # Methods not based on the reduction of the Search Space
 
 def polinomialApproximation(function='Default',interval=[-1e3, 1e3],N=2):
@@ -145,3 +147,29 @@ def Newton(function='Default',initial=0,tol=1e-3,N=100,h=1e-4):
 
     return x_optimal, f_optimal, iterations
 
+
+def LevenbergMarquardt(function='Default',x0=0,lamb0=1,tol=1e-3,N=100,h=1e-4):
+    f = zeros(N)
+    x = zeros(N)
+    x[0] = x0
+    f[0] = ZDT(x[0], func=function)
+    lamb = zeros(N)
+    lamb[0] = lamb0
+    i = 0
+
+    while (i <= N):
+        f_dev1, f_dev2 = finiteDiff(function,x[i],h)
+        x[i+1] = x[i] - f_dev1/(f_dev2+lamb[i])
+        f[i+1] = ZDT(x[i+1], func=function)
+        lamb[i+1] = abs(f[i+1] - f[i])/abs(f[0])
+        if (abs(x[i+1]-x[i]) <= tol):
+            iterations = i+1
+            x_optimal = x[i+1]
+            f_optimal = f[i+1]
+            break
+        i = i+1
+
+    return x_optimal, f_optimal, iterations
+
+x_optimal, f_optimal, iterations = LevenbergMarquardt(function='Default',x0=300,tol=1e-8,N=100,h=1e-4)
+print(x_optimal, '\n', f_optimal, '\n', iterations)
