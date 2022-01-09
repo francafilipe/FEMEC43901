@@ -1,3 +1,5 @@
+from numpy import linspace, polyfit, polyder, roots
+from numpy.lib.polynomial import polyder
 from support_funcs import *
 from zdt import *
 
@@ -111,3 +113,20 @@ def fibonacci_method(function='Default',interval=[-1e3, 1e3],tol=1e-3,N=100):
 
     return x_optimal, f_optimal, iterations
 
+# Methods not based on the reduction of the Search Space
+
+def polinomialApproximation(function='Default',interval=[-1e3, 1e3],N=2):
+    x = linspace(interval[0],interval[1],N+1)
+    f = ZDT(x, func=function)
+    p = polyfit(x, f, N)        # Polynomial approximation coefficients
+    d = polyder(p, 1)           # Derivative of the polynomial (coefficients)
+    
+    x_optimal = roots(d)
+    x_optimal = x_optimal[x_optimal>interval[0]]
+    x_optimal = x_optimal[x_optimal<interval[1]-1e-3]
+
+    return x_optimal
+
+for N in range(2,6):
+    sol = polinomialApproximation(function='Default',interval=[0, 600],N=N)
+    print('Para N = ', N, 'as raízes são: ',sol)
