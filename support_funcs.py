@@ -8,9 +8,9 @@ def fibonacci(index):
 
 def finiteDiff(f,x,h):
     # Returns the value of the function f 1st and 2nd derivatives based on the finite differences method
-    fx       = ZDT(x, func=function)
-    fx_plus  = ZDT(x+h, func=function)
-    fx_minus = ZDT(x-h, func=function)
+    fx       = ZDT(x, func=f)
+    fx_plus  = ZDT(x+h, func=f)
+    fx_minus = ZDT(x-h, func=f)
 
     f_dev1 = (fx_plus-fx_minus)/(2*h)
     f_dev2 = (fx_plus-2*fx+fx_minus)/(h**2)
