@@ -131,13 +131,16 @@ def polinomialApproximation(function='Default',interval=[-1e3, 1e3],N=2):
 
 
 def Newton(function='Default',initial=0,tol=1e-3,N=100,h=1e-4):
+    f = zeros(N)
     x = zeros(N)
     x[0] = initial
+    f[0] = ZDT(x[0], func=function)
     i = 0
 
     while (i <= N):
         f_dev1, f_dev2 = finiteDiff(function,x[i],h)
         x[i+1] = x[i] - f_dev1/f_dev2
+        f[i+1] = ZDT(x[i+1], func=function)
         if (abs(x[i+1]-x[i]) <= tol):
             iterations = i+1
             x_optimal = x[i+1]
@@ -194,5 +197,3 @@ def Quasi_Newton(function='Default',x0=0,xp=0,tol=1e-3,N=100,h=1e-4):
 
     return x_optimal, f_optimal, iterations
 
-x_optimal, f_optimal, iterations = Quasi_Newton(function='Default',x0=300,xp=0,tol=1e-8,N=100,h=1e-4)
-print(x_optimal, '\n', f_optimal, '\n', iterations)
