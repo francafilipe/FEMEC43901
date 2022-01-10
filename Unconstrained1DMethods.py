@@ -1,4 +1,4 @@
-from numpy import linspace, polyfit, polyder, roots, zeros
+from numpy import array, linspace, polyfit, polyder, roots, zeros, size
 from numpy.lib.polynomial import polyder
 from support_funcs import *
 from zdt import *
@@ -127,7 +127,7 @@ def polinomialApproximation(function='Default',interval=[-1e3, 1e3],N=2):
     x_optimal = x_optimal[x_optimal>interval[0]]
     x_optimal = x_optimal[x_optimal<interval[1]-1e-3]
 
-    return x_optimal
+    return x_optimal, p
 
 
 def Newton(function='Default',initial=0,tol=1e-3,N=100,h=1e-4):
@@ -137,7 +137,7 @@ def Newton(function='Default',initial=0,tol=1e-3,N=100,h=1e-4):
     f[0] = ZDT(x[0], func=function)
     i = 0
 
-    while (i <= N):
+    while (i <= N-2):
         f_dev1, f_dev2 = finiteDiff(function,x[i],h)
         x[i+1] = x[i] - f_dev1/f_dev2
         f[i+1] = ZDT(x[i+1], func=function)
@@ -145,10 +145,11 @@ def Newton(function='Default',initial=0,tol=1e-3,N=100,h=1e-4):
             iterations = i+1
             x_optimal = x[i+1]
             f_optimal = ZDT(x[i+1], func=function)
+            optimal = array([x_optimal, f_optimal])
             break
         i = i+1
 
-    return x_optimal, f_optimal, iterations
+    return optimal, iterations, x, f
 
 
 def LevenbergMarquardt(function='Default',x0=0,lamb0=1,tol=1e-3,N=100,h=1e-4):
@@ -160,7 +161,7 @@ def LevenbergMarquardt(function='Default',x0=0,lamb0=1,tol=1e-3,N=100,h=1e-4):
     lamb[0] = lamb0
     i = 0
 
-    while (i <= N):
+    while (i <= N-2):
         f_dev1, f_dev2 = finiteDiff(function,x[i],h)
         x[i+1] = x[i] - f_dev1/(f_dev2+lamb[i])
         f[i+1] = ZDT(x[i+1], func=function)
@@ -169,10 +170,11 @@ def LevenbergMarquardt(function='Default',x0=0,lamb0=1,tol=1e-3,N=100,h=1e-4):
             iterations = i+1
             x_optimal = x[i+1]
             f_optimal = f[i+1]
+            optimal = array([x_optimal, f_optimal])
             break
         i = i+1
 
-    return x_optimal, f_optimal, iterations
+    return optimal, iterations, x, f
 
 
 def Quasi_Newton(function='Default',x0=0,xp=0,tol=1e-3,N=100,h=1e-4):
@@ -184,7 +186,7 @@ def Quasi_Newton(function='Default',x0=0,xp=0,tol=1e-3,N=100,h=1e-4):
     fp_dev1, fp_dev2 = finiteDiff(function,xp,h)
     i = 0
 
-    while (i <= N):
+    while (i <= N-2):
         f_dev1, f_dev2 = finiteDiff(function,x[i],h)
         x[i+1] = x[i] - f_dev1/((f_dev1-fp_dev1)/(x[i]-xp))
         f[i+1] = ZDT(x[i+1], func=function)
@@ -192,8 +194,8 @@ def Quasi_Newton(function='Default',x0=0,xp=0,tol=1e-3,N=100,h=1e-4):
             iterations = i+1
             x_optimal = x[i+1]
             f_optimal = f[i+1]
+            optimal = array([x_optimal, f_optimal])
             break
         i = i+1
 
-    return x_optimal, f_optimal, iterations
-
+    return optimal, iterations, x, f
