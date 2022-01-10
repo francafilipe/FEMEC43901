@@ -1,4 +1,5 @@
 import math
+from numpy import cos 
 
 def ZDT(x=0,y=0,func='Default'):
 
@@ -21,7 +22,7 @@ def ZDT(x=0,y=0,func='Default'):
         f = 2*x**2 - 1.05*x**4 + (1/6)*x**6 + x*y + y**2
     
     elif func=='Rastrigin':
-        f = 10 + x**2 - 10*math.cos(2*math.pi*x)
+        f = 10 + x**2 - 10*cos(2*math.pi*x)
 
     else:
         raise NameError('Função a ser avaliada não definida!')
