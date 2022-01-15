@@ -1,8 +1,41 @@
 # File used to test the implemented algorithms for each optimization method
 
-from numpy import poly1d
+from numpy import poly1d, argmin, array
 from Unconstrained1DMethods import *
 import matplotlib.pyplot as plt
+
+
+# Evaluate Multi-modal functions
+
+func = 'Three-Hump Camel'
+dom = array([-5, 4])
+div = 10
+N = 100
+tol = 1e-3
+h = 1e-4
+
+subdoms = linspace(dom[0],dom[1],div+1) # [-5.12 -4.12 ...]
+bests   = zeros((div,2))
+for i in range(len(subdoms)-1):
+    x0 = (subdoms[i+1]+subdoms[i])/2
+    optimal, iterations, x, f = LevenbergMarquardt(function=func,x0=x0,tol=tol,N=N,h=h)
+    bests[i,:] = optimal
+
+min_index = argmin(bests[:,1])
+optimal = bests[min_index,:]
+
+y_real = ZDT(x=linspace(dom[0],dom[1],500),func=func)
+plt.plot(linspace(dom[0],dom[1],500),y_real,'k-')
+for i in range(len(subdoms)):
+    plt.axvline(x=subdoms[i],color='k',ls='--',linewidth=0.5)
+for i in range(len(bests)):
+    plt.axvline(x=bests[i,0],ymin=0,ymax=bests[i,1],color='r',ls='-.',linewidth=0.75)
+plt.axvline(x=optimal[0],color='g',ls='--',linewidth=1.5)
+
+plt.suptitle('Otimização Multi-Modal p/ função ' + func + '\n Intervalo = ' + str(dom) + ', ' + str(div) + ' divisões de domínio', fontweight='bold')
+plt.ylabel('Valor da função f(x)'); plt.xlabel('Valor da variável de projeto x')
+plt.xlim(dom)
+plt.show()
 
 
 """
