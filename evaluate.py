@@ -1,8 +1,38 @@
 # File used to test the implemented algorithms for each optimization method
 
-from numpy import poly1d, argmin, array
+from numpy import poly1d, argmin, array, meshgrid
 from Unconstrained1DMethods import *
+from UnconstrainedNDMethods import *
 import matplotlib.pyplot as plt
+
+
+# Evaluate multidimensional ZDTs using Unconstrained N-dimension optimization methods
+# Simulation Parameters & Inputs
+func='Sphere'
+lower_lim = -5
+uper_lim  =  5
+n_points = array([10, 20, 50, 100])
+
+# Plot contour of the evaluated function
+k = linspace(lower_lim,uper_lim,1000)
+X, Y = meshgrid(k,k)
+f = ZDT(x=X, y=Y, func=func)
+
+contours = plt.contour(X,Y,f,10, cmap='viridis', alpha=0.5)
+plt.clabel(contours, inline=True, fontsize=10)
+
+# Optimize function
+optimal = zeros((len(n_points),2),)
+for i in range(len(n_points)):
+    best, eval = randomSearch(function=func,xlim=[lower_lim, uper_lim],ylim=[lower_lim,uper_lim],N=n_points[i])
+    optimal[i,:] = best[0:1]
+    plt.scatter(best[0],best[1],)
+
+plt.suptitle('Otimização Busca Aleatória p/ função ' + func, fontweight='bold')
+plt.ylabel('y'); plt.xlabel('x')
+plt.legend(('N = 10','N = 20','N = 50','N = 100'))
+plt.show()
+
 
 """
 # Evaluate Multi-modal functions
