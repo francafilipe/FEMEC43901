@@ -1,6 +1,5 @@
-from cmath import sqrt
 import math
-from numpy import cos, sin, exp
+from numpy import cos, sin, exp, sqrt
 
 def ZDT(x=0,y=0,func='Default'):
 
@@ -29,10 +28,10 @@ def ZDT(x=0,y=0,func='Default'):
         f = -20*exp(-0.2*sqrt(0.5*(x**2 + y**2))) - exp(0.5*(cos(2*math.pi*x) + cos(2*math.pi*y))) + math.e + 20
 
     elif func=='LeviNo13':
-        f = (sin(2*math.pi*x))**2 + ((x-1)**2)*(1 + (sin(3*math.pi*y)**2)) + ((y-1)**2)*(1 + (sin(2*math.pi*y))**2) 
+        f = (sin(3*math.pi*x))**2 + ((x-1)**2)*(1 + (sin(3*math.pi*y)**2)) + ((y-1)**2)*(1 + (sin(2*math.pi*y))**2) 
 
     elif func=='Easom':
-        f = -cos(x)*cos(y)*exp(-((x-math.pi)**2 + (y - math.pi)))
+        f = -cos(x)*cos(y)*exp(-((x-math.pi)**2 + (y - math.pi)**2))
 
     elif func=='SchafferNo2':
         f = 0.5 + ((sin(x**2 - y**2))**2 - 0.5)/((1 + 0.001*(x**2 + y**2))**2)
