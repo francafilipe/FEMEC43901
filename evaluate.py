@@ -4,13 +4,13 @@ from numpy import poly1d, argmin, array
 from Unconstrained1DMethods import *
 import matplotlib.pyplot as plt
 
-
+"""
 # Evaluate Multi-modal functions
 
-func = 'Three-Hump Camel'
-dom = array([-5, 4])
+func = 'SchafferNo2'
+dom = array([-5, 5])
 div = 10
-N = 100
+N = 1000
 tol = 1e-3
 h = 1e-4
 
@@ -36,7 +36,7 @@ plt.suptitle('Otimização Multi-Modal p/ função ' + func + '\n Intervalo = ' 
 plt.ylabel('Valor da função f(x)'); plt.xlabel('Valor da variável de projeto x')
 plt.xlim(dom)
 plt.show()
-
+"""
 
 """
 # Evaluate the Polynomial Approximation Method
