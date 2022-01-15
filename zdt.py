@@ -1,5 +1,6 @@
+from cmath import sqrt
 import math
-from numpy import cos 
+from numpy import cos, sin, exp
 
 def ZDT(x=0,y=0,func='Default'):
 
@@ -23,6 +24,18 @@ def ZDT(x=0,y=0,func='Default'):
     
     elif func=='Rastrigin':
         f = 10 + x**2 - 10*cos(2*math.pi*x)
+
+    elif func=='Ackley':
+        f = -20*exp(-0.2*sqrt(0.5*(x**2 + y**2))) - exp(0.5*(cos(2*math.pi*x) + cos(2*math.pi*y))) + math.e + 20
+
+    elif func=='LeviNo13':
+        f = (sin(2*math.pi*x))**2 + ((x-1)**2)*(1 + (sin(3*math.pi*y)**2)) + ((y-1)**2)*(1 + (sin(2*math.pi*y))**2) 
+
+    elif func=='Easom':
+        f = -cos(x)*cos(y)*exp(-((x-math.pi)**2 + (y - math.pi)))
+
+    elif func=='SchafferNo2':
+        f = 0.5 + ((sin(x**2 - y**2))**2 - 0.5)/((1 + 0.001*(x**2 + y**2))**2)
 
     else:
         raise NameError('Função a ser avaliada não definida!')
