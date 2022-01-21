@@ -6,7 +6,10 @@ from UnconstrainedNDMethods import *
 import matplotlib.pyplot as plt
 
 
-# Evaluate multidimensional ZDTs using Unconstrained N-dimension optimization methods
+
+
+"""
+# Evaluate multidimensional ZDTs using Random Search Method (Zero Order)
 # Simulation Parameters & Inputs
 func='Sphere'
 lower_lim = -5
@@ -32,11 +35,13 @@ plt.suptitle('Otimização Busca Aleatória p/ função ' + func, fontweight='bo
 plt.ylabel('y'); plt.xlabel('x')
 plt.legend(('N = 10','N = 20','N = 50','N = 100'))
 plt.show()
-
-
 """
-# Evaluate Multi-modal functions
 
+
+
+# Evaluate Multi-modal functions
+"""
+# Optimization & Simulation Parameters
 func = 'SchafferNo2'
 dom = array([-5, 5])
 div = 10
@@ -68,34 +73,36 @@ plt.xlim(dom)
 plt.show()
 """
 
-"""
+
 # Evaluate the Polynomial Approximation Method
-# Simulation&Optimization Parameters
-func = 'Rastrigin'
+"""
+# Simulation & Optimization Parameters
+func = sphere
 intv = [-5.12, 5.12]
 max_N = 6
 plot_styles = ['go','r^','bv','ms','ch']
-y_real = ZDT(x=linspace(intv[0],intv[1],500),func=func)
+y_real = sphere(x=linspace(intv[0],intv[1],500),y=0)
 plt.plot(linspace(intv[0],intv[1],500),y_real,'k-')
 
 for N in range(2,max_N+1):
-    sol, p = polinomialApproximation(function=func,interval=intv,N=N)
+    sol, p = polinomialApproximation(func,interval=intv,N=N)
     poly = poly1d(p)
     x = linspace(intv[0],intv[1],50)
     y = poly(x)
     plt.plot(x,y,plot_styles[N-2])
 
-plt.suptitle('Aproximação Polinomial p/ função ' + func + '\n Intervalo = ' + str(intv), fontweight='bold')
+plt.suptitle('Aproximação Polinomial p/ função Sphere' '\n Intervalo = ' + str(intv), fontweight='bold')
 plt.ylabel('Valor da função f(x)'); plt.xlabel('Valor da variável de projeto x');
 plt.legend(('Função f','n = 2','n = 3', 'n = 4', 'n = 5', 'n = 6'))
 plt.show()
 """
 
-"""
+
+
 # Evaluate test functions for Newton, Levenberg-Marquardt & Quasi-Newton Methods
-
-
-func = 'Rastrigin'
+"""
+# Simulation & optimization Parameters
+func = sphere
 x0 = -0.1
 N = 15
 tol = 1e-8
@@ -121,7 +128,7 @@ figure1, plots = plt.subplots(2,1)
 
 plots[0].plot(iterations, f1, 'b--',iterations, f2, 'b-.', iterations, f3, 'bo')
 plots[1].plot(iterations, x1, 'b--', iterations, x2, 'b-.', iterations, x3, 'bo')
-plt.suptitle('Convergência dos Métodos p/ função ' + func + '\n Tolerância = 10^-8 & Chute inicial = ' + str(x0), fontweight='bold')
+plt.suptitle('Convergência dos Métodos \n Tolerância = 10^-8 & Chute inicial = ' + str(x0), fontweight='bold')
 plots[0].set_ylabel('Valor da função f(x)'); plots[1].set_ylabel('Valor da variável de projeto x');
 plots[0].set_xlabel('N° de iterações'); plots[1].set_xlabel('N° de iterações') 
 plt.setp(plots, xticks=range(0,N+1))
@@ -131,35 +138,35 @@ plt.show()
 """
 
 
-"""
 # Evaluate test functions for Bissection, Golden Ratio & Fibonacci Methods
+"""
 print('Função Default - Exemplo Apostila')
-print('Bisseção: ',     bisseccao('Default',[0, 600],0.2,1e-8,100))
-print('Seção Aurea: ',  golden_ratio('Default',[0, 600],1e-8,100))
-print('Fibonacci: ',    fibonacci_method('Default',[0, 600],1e-8,100))
+print('Bisseção: ',     bisseccao(default1d,[0, 600],0.2,1e-8,100))
+print('Seção Aurea: ',  golden_ratio(default1d,[0, 600],1e-8,100))
+print('Fibonacci: ',    fibonacci_method(default1d,[0, 600],1e-8,100))
 print('-----------------------')
 
 print('Função Sphere (y=0)')
-print('Bisseção: ',     bisseccao('Sphere',[-1e3, 1e3],0.5,1e-8,100))
-print('Seção Aurea: ',  golden_ratio('Sphere',[-1e3, 1e3],1e-8,100))
-print('Fibonacci: ',    fibonacci_method('Sphere',[-1e3, 1e3],1e-8,100))
+print('Bisseção: ',     bisseccao(sphere,[-1e3, 1e3],0.5,1e-8,100))
+print('Seção Aurea: ',  golden_ratio(sphere,[-1e3, 1e3],1e-8,100))
+print('Fibonacci: ',    fibonacci_method(sphere,[-1e3, 1e3],1e-8,100))
 print('-----------------------')
 
 print('Função Beale (y=0.5)')
-print('Bisseção: ',     bisseccao('Beale',[-4.5, 4.5],0.2,1e-8,100))
-print('Seção Aurea: ',  golden_ratio('Beale',[-4.5, 4.5],1e-8,100))
-print('Fibonacci: ',    fibonacci_method('Beale',[-4.5, 4.5],1e-8,100))
+print('Bisseção: ',     bisseccao(beale,[-4.5, 4.5],0.2,1e-8,100))
+print('Seção Aurea: ',  golden_ratio(beale,[-4.5, 4.5],1e-8,100))
+print('Fibonacci: ',    fibonacci_method(beale,[-4.5, 4.5],1e-8,100))
 print('-----------------------')
 
 print('Função Three-Hump Camel (y=0)')
-print('Bisseção: ',     bisseccao('Three-Hump Camel',[-5, 5],0.5,1e-8,100))
-print('Seção Aurea: ',  golden_ratio('Three-Hump Camel',[-5, 5],1e-8,100))
-print('Fibonacci: ',    fibonacci_method('Three-Hump Camel',[-5, 5],1e-8,100))
+print('Bisseção: ',     bisseccao(threeHumpCamel,[-5, 5],0.5,1e-8,100))
+print('Seção Aurea: ',  golden_ratio(threeHumpCamel,[-5, 5],1e-8,100))
+print('Fibonacci: ',    fibonacci_method(threeHumpCamel,[-5, 5],1e-8,100))
 print('-----------------------')
 
 print('Função Rastrigin (y=0)')
-print('Bisseção: ',     bisseccao('Rastrigin',[-5.12, 5.12],0.5,1e-3,100))
-print('Seção Aurea: ',  golden_ratio('Rastrigin',[-5.12, 5.12],1e-3,100))
-print('Fibonacci: ',    fibonacci_method('Rastrigin',[-5.12, 5.12],1e-3,100))
+print('Bisseção: ',     bisseccao(rastrigin,[-5.12, 5.12],0.5,1e-3,100))
+print('Seção Aurea: ',  golden_ratio(rastrigin,[-5.12, 5.12],1e-3,100))
+print('Fibonacci: ',    fibonacci_method(rastrigin,[-5.12, 5.12],1e-3,100))
 print('-----------------------')
 """
