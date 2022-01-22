@@ -1,9 +1,13 @@
-from numpy import array, linspace, polyfit, polyder, roots, zeros, size, argmin
+from sympy import Symbol, lambdify
+from numpy import array, linspace, polyfit, polyder, roots, zeros, size, argmin, eye
 from numpy.random import rand
 from numpy.lib.polynomial import polyder
+from Unconstrained1DMethods import *
 from support_funcs import *
-from zdt import *
+from test_functions import *
+from time import sleep
 
+# Metodos de Ordem Zero (Busca Aleatoria e Direções Conjugadas de Powell)
 
 def randomSearch(function,xlim,ylim,N,order=2):
     # Define N random points to be tested 
@@ -12,7 +16,7 @@ def randomSearch(function,xlim,ylim,N,order=2):
     y = ylim[0] + r*(ylim[1] - ylim[0])
 
     # Evaluate function
-    f = ZDT(x=x, y=y, func=function)
+    f = function(x=x, y=y)
 
     evaluated = array([x, y, f])
 
@@ -25,4 +29,46 @@ def randomSearch(function,xlim,ylim,N,order=2):
     optimal = array([x_optimal, y_optimal, f_optimal])
 
     return optimal, evaluated
+
+
+# Metodos de Primeira Ordem (Maxima Descida & Direções Conjugadas)
+
+def maximaDescida(function,x0,tol=1e-3,itermax=100,runitermax=False):
+    from sympy.abc import x, y, a
+    f  = function(x=x,y=y)
+    df = [f.diff(x), f.diff(y)]
+    f  = lambdify([x,y],f,"numpy")
+    df = [lambdify([x,y],df[0],"numpy"), lambdify([x,y],df[1],"numpy")] 
+
+    xsol = zeros((itermax+1,2))
+    xsol[0,:] = x0
+
+    k = 0
+    while (k < itermax):
+        print('\n Starting ' + str(k+1) + '° iteration: ')
+
+        # Create parametric function f = f(a) = f( x0 - a*df/dx|x0, y0 - a*df/dy|y0 )
+        fn_symb = f( xsol[k,0] - a*df[0](xsol[k,0],xsol[k,1]), xsol[k,1] - a*df[1](xsol[k,1],xsol[k,1]) )
+        fn = lambdify(a,fn_symb,"numpy")
+
+        # Optimize the function fn for \alhpa (a)
+        a_optimal, __, __, __ = Newton(function=fn,initial=0,tol=tol,N=itermax,h=1e-4)
+
+        # Update the initial guess value (x0 & y0)
+        xsol[k+1,0] = xsol[k,0] - a_optimal[0]*df[0](xsol[k,0],xsol[k,1])
+        xsol[k+1,1] = xsol[k,1] - a_optimal[0]*df[1](xsol[k,0],xsol[k,1])
+        k = k+1
+
+        if ( (sum(abs(xsol[k,:] - xsol[k-1,:])) <= tol) and (not runitermax) ):
+            solution = xsol[k,:]
+            break
+
+    else:
+        solution = xsol
+
+    return solution
+
+
+sol = maximaDescida(rastrigin,x0=[5, 5],tol=1e-3,itermax=100)
+print('\n',sol,'\n')
 
