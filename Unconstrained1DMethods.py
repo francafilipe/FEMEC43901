@@ -130,21 +130,21 @@ def polinomialApproximation(function,interval=[-1e3, 1e3],N=2):
     return x_optimal, p
 
 
-def Newton(function,initial=0,tol=1e-3,N=100,h=1e-4):
+def Newton(function,x0=0,tol=1e-3,N=100,h=1e-4):
     f = zeros(N)
     x = zeros(N)
-    x[0] = initial
+    x[0] = x0
     f[0] = function(x[0])
     i = 0
 
     while (i <= N-2):
         f_dev1, f_dev2 = finiteDiff(function,x[i],h)
-        x[i+1] = x[i] - f_dev1/f_dev2
+        x[i+1] = x[i] - f_dev1/(f_dev2+h)
         f[i+1] = function(x[i+1])
         if (abs(x[i+1]-x[i]) <= tol):
             iterations = i+1
             x_optimal = x[i+1]
-            f_optimal = function(x[i+1])
+            f_optimal = f[i+1]
             optimal = array([x_optimal, f_optimal])
             break
         i = i+1
