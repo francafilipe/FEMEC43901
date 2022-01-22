@@ -1,5 +1,5 @@
 from sympy import Symbol, lambdify
-from numpy import array, gradient, linspace, polyfit, polyder, roots, zeros, size, argmin, eye, inner, transpose
+from numpy import array, concatenate, gradient, identity, linspace, newaxis, polyfit, polyder, roots, zeros, size, argmin, eye, inner, transpose, delete
 from numpy.random import rand
 from numpy.lib.polynomial import polyder
 from Unconstrained1DMethods import *
@@ -29,6 +29,59 @@ def randomSearch(function,xlim,ylim,N,order=2):
     optimal = array([x_optimal, y_optimal, f_optimal])
 
     return optimal, evaluated
+
+
+def powell(function,x0,tol=1e-3,itermax=100,runitermax=False):
+    from sympy.abc import x, y, a
+    f  = function(x=x,y=y)
+    f  = lambdify([x,y],f,"numpy")
+
+    u  = identity(2)
+    xsol = zeros((itermax+1,2))
+    xsol[0,:] = x0
+
+    k = 0
+    while (k < itermax):
+        
+        xitr  = zeros((3,2))
+        for i in range(len(x0)):
+            # Create parametric function f = f(a) = f( x0 - a*u(:,i) )
+            fn_symb = f( xitr[i,0] + a*u[0,i] , xitr[i,1] + a*u[1,i] )
+            fn = lambdify(a,fn_symb,"numpy")
+            
+            # Optimize the function fn for \alhpa (a) for the inner problem
+            a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
+            alpha = a_optimal[0]
+
+            # Update the inner problem solution vetor value
+            xitr[i+1,:] = xitr[i,:] + alpha*u[:,i]
+
+        # Update matrix u & evaluate (u(:,n) = xn - x0)
+        un = (xitr[2,:] - xsol[0,:])[:,newaxis]
+        u = delete(u,0,1)
+        u = concatenate( (u,un) , axis=1 )
+
+        # Create parametric function f = f(a) = f( x0 - a*u(:,N) )
+        fn_symb = f( xsol[k,0] + a*u[0,1] , xsol[k,1] + a*u[1,1] )
+        fn = lambdify(a,fn_symb,"numpy")
+
+        # Optimize the function fn for \alhpa (a)
+        a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
+        alpha = a_optimal[0]
+
+        # Update the initial guess value (x0 & y0)
+        xsol[k+1,:] = xsol[k,:] + alpha*u[:,1]
+        k = k+1
+
+        if ( (sum(abs(xsol[k,:] - xsol[k-1,:])) <= tol) and (not runitermax) ):
+            solution = xsol[k,:]
+            break
+
+    else:
+        solution = xsol
+
+    return solution
+
 
 
 # Metodos de Primeira Ordem (Maxima Descida & Direções Conjugadas)
@@ -117,6 +170,10 @@ def direcoesConjugadas(function,x0,tol=1e-3,itermax=100,runitermax=False):
     return solution
 
 
+"""
+sol = powell(sphere,x0=[-5, 5],tol=1e-3,itermax=100,runitermax=True)
+print('\n',sol,'\n')
+"""
 
 """
 sol = maximaDescida(rastrigin,x0=[5, 5],tol=1e-3,itermax=100)
