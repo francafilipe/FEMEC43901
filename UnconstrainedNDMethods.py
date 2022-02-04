@@ -317,8 +317,3 @@ def levenbergMarquardt2D(function,x0,lamb0=0,tol=1e-3,itermax=100,runitermax=Fal
         solution = xsol
 
     return solution
-
-
-
-sol = powell(sphere,[5., 5.],tol=1e-3,itermax=10,runitermax=True)
-print(sol)
