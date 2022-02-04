@@ -173,9 +173,9 @@ def direcoesConjugadas(function,x0,tol=1e-3,itermax=100,runitermax=False,diffRes
         grad[k,:], _ = finiteDiff(function,xsol[k,:],h=1e-4)
 
         if ( k == 0 ):
-            S[k,:]  = -grad[k,:]
+            S[k,:]  = grad[k,:]
         else:
-            S[k,:]  = -grad[k,:] + S[k-1,:]*( dot(grad[k,:].T, grad[k,:]) )/( dot(grad[k,:].T, grad[k,:]) )
+            S[k,:]  = grad[k,:] - S[k-1,:]*( dot(grad[k,:].T, grad[k,:]) )/( dot(grad[k-1,:].T, grad[k-1,:]) )
 
 
         # Change multidimensional problem to unidimensional one using: x_{k+1} =  x_{k} - a*grad(x_{k})
