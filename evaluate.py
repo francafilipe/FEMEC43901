@@ -6,6 +6,28 @@ from UnconstrainedNDMethods import *
 import matplotlib.pyplot as plt
 
 
+# Evaluate multidimensional ZDTs using 1st & 2nd Order methods 
+# Simulation Parameters & Inputs
+function = schafferNo2
+x0 = [ [-5.05, 5.1], [5.1, -4.9], [2.3, 2.4] ]
+
+# Plot contour of the evaluated function
+k = linspace(-10,10,1000)
+X, Y = meshgrid(k,k)
+x = array([X, Y])
+f = function(x)
+contours = plt.contour(X,Y,f,10, cmap='viridis', alpha=0.5)
+
+for i in range(size(x0,axis=0)):
+    solution = levenbergMarquardt2D(function,x0[i][:],tol=1e-3,itermax=100,runitermax=True,diffRes=1e-4)
+    print(solution)
+    plt.plot(solution[:,0], solution[:,1],'-s')
+
+plt.clabel(contours, inline=True, fontsize=10)
+plt.suptitle('Otimização por Levenberg Marquardt (2° Ordem) p/ função ' + function.__name__, fontweight='bold')
+plt.ylabel('y'); plt.xlabel('x')
+plt.legend((''))
+plt.show()
 
 
 """
