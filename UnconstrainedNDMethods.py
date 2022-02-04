@@ -1,5 +1,5 @@
 from cProfile import run
-from sympy import Symbol, lambdify
+from sympy import Symbol, lambdify, cos
 from numpy import array, concatenate, gradient, identity, linspace, newaxis, polyfit, polyder, roots, zeros, size, argmin, eye, inner, transpose, delete, dot
 from numpy.random import rand
 from numpy.lib.polynomial import polyder
@@ -8,6 +8,7 @@ from Unconstrained1DMethods import *
 from support_funcs import *
 from test_functions import *
 from time import sleep
+from math import pi
 
 # Metodos de Ordem Zero (Busca Aleatoria e Direções Conjugadas de Powell)
 
@@ -34,11 +35,8 @@ def randomSearch(function,xlim,ylim,N,order=2):
 
 
 def powell(function,x0,tol=1e-3,itermax=100,runitermax=False):
-    from sympy.abc import x, y, a
-    f  = function(x=x,y=y)
-    f  = lambdify([x,y],f,"numpy")
-
-    u  = identity(2)
+    nVar = len(x0)
+    u    = identity(nVar)
     xsol = zeros((itermax+1,2))
     xsol[0,:] = x0
 
@@ -47,13 +45,25 @@ def powell(function,x0,tol=1e-3,itermax=100,runitermax=False):
         
         xitr  = zeros((3,2))
         for i in range(len(x0)):
-            # Create parametric function f = f(a) = f( x0 - a*u(:,i) )
-            fn_symb = f( xitr[i,0] + a*u[0,i] , xitr[i,1] + a*u[1,i] )
-            fn = lambdify(a,fn_symb,"numpy")
-            
-            # Optimize the function fn for \alhpa (a) for the inner problem
-            a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
-            alpha = a_optimal[0]
+
+            # Find the value of a (\alpha) that optimize the function f( x[i-1] + a*u(:,i) ) for each directions u(:,i)
+            a = zeros(itermax+1)
+            i = 0
+            while (i < itermax):
+                x_i = xitr[i,0] + a[i]*u[0,i]
+
+                # Evaluate the 1st & 2nd order derivatives for the unidimensional function f(a)
+                fa        = function(x_i)
+                f_h_plus  = function(xsol[k,:] - (a[i]+1e-4)*u[:,i])
+                f_h_minus = function(xsol[k,:] - (a[i]-1e-4)*u[:,i])
+                firstDerivative = (f_h_plus-f_h_minus)/(2*1e-4)
+                secondDerivative = (f_h_plus+f_h_minus-2*fa)/(1e-4**2)
+
+                a[i+1] = a[i] - firstDerivative/(secondDerivative+1e-4)
+                i = i+1
+                if (abs(a[i]-a[i-1]) <= tol):
+                    break
+            alpha = a[i]
 
             # Update the inner problem solution vetor value
             xitr[i+1,:] = xitr[i,:] + alpha*u[:,i]
@@ -63,13 +73,26 @@ def powell(function,x0,tol=1e-3,itermax=100,runitermax=False):
         u = delete(u,0,1)
         u = concatenate( (u,un) , axis=1 )
 
-        # Create parametric function f = f(a) = f( x0 - a*u(:,N) )
-        fn_symb = f( xsol[k,0] + a*u[0,1] , xsol[k,1] + a*u[1,1] )
-        fn = lambdify(a,fn_symb,"numpy")
 
-        # Optimize the function fn for \alhpa (a)
-        a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
-        alpha = a_optimal[0]
+        # Change multidimensional problem to unidimensional one using: x_{k+1} =  x_{k} - a*gradiente(x_{k})
+        # Find the value of a (\alpha) that optimize the function (now unidimensional)
+        a = zeros(itermax+1)
+        i = 0
+        while (i < itermax):
+            x_k   = xsol[k,:] - a[i]*u[:,1]
+            # Evaluate the 1st & 2nd order derivatives for the unidimensional function f(a)
+            fa        = function(x_k)
+            f_h_plus  = function(xsol[k,:] - (a[i]+1e-4)*u[:,1])
+            f_h_minus = function(xsol[k,:] - (a[i]-1e-4)*u[:,1])
+            firstDerivative = (f_h_plus-f_h_minus)/(2*1e-4)
+            secondDerivative = (f_h_plus+f_h_minus-2*fa)/(1e-4**2)
+
+            a[i+1] = a[i] - firstDerivative/(secondDerivative+1e-4)
+            i = i+1
+            if (abs(a[i]-a[i-1]) <= tol):
+                break
+        alpha = a[i]
+
 
         # Update the initial guess value (x0 & y0)
         xsol[k+1,:] = xsol[k,:] + alpha*u[:,1]
@@ -88,50 +111,56 @@ def powell(function,x0,tol=1e-3,itermax=100,runitermax=False):
 
 # Metodos de Primeira Ordem (Maxima Descida & Direções Conjugadas)
 
-def maximaDescida(function,x0,tol=1e-3,itermax=100,runitermax=False):
-    from sympy.abc import x, y, a
-    f  = function(x=x,y=y)
-    df = [f.diff(x), f.diff(y)]
-    f  = lambdify([x,y],f,"numpy")
-    df = [lambdify([x,y],df[0],"numpy"), lambdify([x,y],df[1],"numpy")] 
-
-    xsol = zeros((itermax+1,2))
+def maximaDescida(function,x0,tol=1e-3,itermax=100,runitermax=False,diffRes=1e-4):
+    grad = zeros((itermax+1,len(x0)))
+    xsol = zeros((itermax+1,len(x0)))
     xsol[0,:] = x0
 
     k = 0
     while (k < itermax):
         print('\n Starting ' + str(k+1) + '° iteration: ')
 
-        # Create parametric function f = f(a) = f( x0 - a*df/dx|x0, y0 - a*df/dy|y0 )
-        fn_symb = f( xsol[k,0] - a*df[0](xsol[k,0],xsol[k,1]), xsol[k,1] - a*df[1](xsol[k,1],xsol[k,1]) )
-        fn = lambdify(a,fn_symb,"numpy")
-        print(fn_symb)
-        # Optimize the function fn for \alhpa (a)
-        a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
+        # Calculate the gradient of the function in the point x[k]
+        grad[k,:], _ = finiteDiff(function,xsol[k,:],h=1e-4)
+
+
+        # Change multidimensional problem to unidimensional one using: x_{k+1} =  x_{k} - a*gradiente(x_{k})
+        # Find the value of a (\alpha) that optimize the function (now unidimensional)
+        a = zeros(itermax+1)
+        i = 0
+        while (i < itermax):
+            x_k   = xsol[k,:] - a[i]*grad[k,:]
+            # Evaluate the 1st & 2nd order derivatives for the unidimensional function f(a)
+            fa        = function(x_k)
+            f_h_plus  = function(xsol[k,:] - (a[i]+diffRes)*grad[k,:])
+            f_h_minus = function(xsol[k,:] - (a[i]-diffRes)*grad[k,:])
+            firstDerivative = (f_h_plus-f_h_minus)/(2*diffRes)
+            secondDerivative = (f_h_plus+f_h_minus-2*fa)/(diffRes**2)
+
+            a[i+1] = a[i] - firstDerivative/(secondDerivative+1e-4)
+            i = i+1
+            if (abs(a[i]-a[i-1]) <= tol):
+                break
+        alpha = a[i]
+
 
         # Update the initial guess value (x0 & y0)
-        xsol[k+1,0] = xsol[k,0] - a_optimal[0]*df[0](xsol[k,0],xsol[k,1])
-        xsol[k+1,1] = xsol[k,1] - a_optimal[0]*df[1](xsol[k,0],xsol[k,1])
+        xsol[k+1,0] = xsol[k,0] - alpha*grad[k,0]
+        xsol[k+1,1] = xsol[k,1] - alpha*grad[k,1]
         k = k+1
 
         if ( (sum(abs(xsol[k,:] - xsol[k-1,:])) <= tol) and (not runitermax) ):
             solution = xsol[k,:]
             break
-
     else:
         solution = xsol
 
     return solution
 
 
-def direcoesConjugadas(function,x0,tol=1e-3,itermax=100,runitermax=False):
-    from sympy.abc import x, y, a
-    f  = function(x=x,y=y)
-    df = [f.diff(x), f.diff(y)]
-    f  = lambdify([x,y],f,"numpy")
-    df = [lambdify([x,y],df[0],"numpy"), lambdify([x,y],df[1],"numpy")] 
-
-    S = zeros((itermax+1,2))
+def direcoesConjugadas(function,x0,tol=1e-3,itermax=100,runitermax=False,diffRes=1e-4):
+    S    = zeros((itermax+1,len(x0)))
+    grad = zeros((itermax+1,len(x0)))
     xsol = zeros((itermax+1,2))
     xsol[0,:] = x0
 
@@ -139,33 +168,44 @@ def direcoesConjugadas(function,x0,tol=1e-3,itermax=100,runitermax=False):
     while (k < itermax):
         print('\n Starting ' + str(k+1) + '° iteration: ')
 
-        # Calculate function gradient and update parameter S_k
+
+        # Calculate function gradient (for x[k]) and update parameter S_k
+        grad[k,:], _ = finiteDiff(function,xsol[k,:],h=1e-4)
+
         if ( k == 0 ):
-            S[k,0]  = -df[0](xsol[k,0],xsol[k,1])
-            S[k,1]  = -df[1](xsol[k,0],xsol[k,1])
+            S[k,:]  = -grad[k,:]
         else:
-            gradk   = [ df[0](xsol[k,0],xsol[k,1]) , df[1](xsol[k,0],xsol[k,1]) ]
-            gradk_1 = [ df[0](xsol[k-1,0],xsol[k-1,1]) , df[1](xsol[k-1,0],xsol[k-1,1]) ]
+            S[k,:]  = -grad[k,:] + S[k-1,:]*( dot(grad[k,:].T, grad[k,:]) )/( dot(grad[k,:].T, grad[k,:]) )
 
-            S[k,0]  = -gradk[0] + S[k-1,0]*(transpose(gradk[0])*gradk[0])/(transpose(gradk_1[0])*gradk_1[0])
-            S[k,1]  = -gradk[1] + S[k-1,1]*(transpose(gradk[1])*gradk[1])/(transpose(gradk_1[1])*gradk_1[1])
 
-        # Create parametric function f = f(a) = f( x0 - a*df/dx|x0, y0 - a*df/dy|y0 )
-        fn_symb = f( xsol[k,0] + a*S[k,0] , xsol[k,1] + a*S[k,1] )
-        fn = lambdify(a,fn_symb,"numpy")
+        # Change multidimensional problem to unidimensional one using: x_{k+1} =  x_{k} - a*grad(x_{k})
+        # Find the value of a (\alpha) that optimize the function (now unidimensional)
+        a = zeros(itermax+1)
+        i = 0
+        while (i < itermax):
+            x_k   = xsol[k,:] - a[i]*S[k,:]
+            # Evaluate the 1st & 2nd order derivatives for the unidimensional function f(a)
+            fa        = function(x_k)
+            f_h_plus  = function(xsol[k,:] - (a[i]+diffRes)*S[k,:])
+            f_h_minus = function(xsol[k,:] - (a[i]-diffRes)*S[k,:])
+            firstDerivative = (f_h_plus-f_h_minus)/(2*diffRes)
+            secondDerivative = (f_h_plus+f_h_minus-2*fa)/(diffRes**2)
 
-        # Optimize the function fn for \alhpa (a)
-        a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
+            a[i+1] = a[i] - firstDerivative/(secondDerivative+1e-4)
+            i = i+1
+            if (abs(a[i]-a[i-1]) <= tol):
+                break
+        alpha = a[i]
+
 
         # Update the initial guess value (x0 & y0)
-        xsol[k+1,0] = xsol[k,0] + a_optimal[0]*S[k,0]
-        xsol[k+1,1] = xsol[k,1] + a_optimal[0]*S[k,0]
+        xsol[k+1,0] = xsol[k,0] + alpha*S[k,0]
+        xsol[k+1,1] = xsol[k,1] + alpha*S[k,1]
         k = k+1
 
         if ( (sum(abs(xsol[k,:] - xsol[k-1,:])) <= tol) and (not runitermax) ):
             solution = xsol[k,:]
             break
-
     else:
         solution = xsol
 
@@ -175,16 +215,10 @@ def direcoesConjugadas(function,x0,tol=1e-3,itermax=100,runitermax=False):
 
 # Metodos de Segunda Ordem (Newton, Levenberg-Marquardt, Variável Métrica)
 
-def newton2D(function,x0,tol=1e-3,itermax=100,runitermax=False):
-    from sympy.abc import x, y, a
-    f   = function(x=x,y=y)
-    df  = [f.diff(x), f.diff(y)]
-    d2f = [ [f.diff(x,2), f.diff(x,y)] , [f.diff(y,x), f.diff(y,2)] ]
-    f   = lambdify([x,y],f,"numpy")
-    df  = [lambdify([x,y],df[0],"numpy"), lambdify([x,y],df[1],"numpy")]
-    d2f = [ [lambdify([x,y],d2f[0][0],"numpy"), lambdify([x,y],d2f[0][1],"numpy")], [lambdify([x,y],d2f[1][0],"numpy"), lambdify([x,y],d2f[1][1],"numpy")] ] 
-
-    xsol = zeros((itermax+1,2))
+def newton2D(function,x0,tol=1e-3,itermax=100,runitermax=False,diffRes=1e-4):
+    hess = zeros((itermax+1,len(x0),len(x0)))
+    grad = zeros((itermax+1,len(x0)))
+    xsol = zeros((itermax+1,len(x0)))
     xsol[0,:] = x0
 
     k = 0
@@ -192,40 +226,49 @@ def newton2D(function,x0,tol=1e-3,itermax=100,runitermax=False):
         print('\n Starting ' + str(k+1) + '° iteration: ')
 
         # Calculate the gradient & hassian of the function for x[k]
-        df_k  = array([ df[0](xsol[k,0],xsol[k,1]),  df[1](xsol[k,1],xsol[k,1]) ])
-        d2f_k = array([ [d2f[0][0](xsol[k,0],xsol[k,1]), d2f[0][1](xsol[k,0],xsol[k,1])], [d2f[1][0](xsol[k,0],xsol[k,1]), d2f[1][1](xsol[k,0],xsol[k,1])] ])
+        grad[k,:], hess[k,:,:] = finiteDiff(function,xsol[k,:],h=1e-4)
+        S = dot( inv(hess[k,:,:]) , grad[k,:] )
 
-        # Create parametric function f = f(a) = f( x0 - a*df/dx|x0, y0 - a*df/dy|y0 )
-        x_k = xsol[k,0] - a*dot(inv(d2f_k),df_k)
-        fn_symb = f( x_k[0], x_k[1] )
-        fn = lambdify(a,fn_symb,"numpy")
 
-        # Optimize the function fn for \alhpa (a)
-        a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
-        alpha = a_optimal[0]
+        # Change multidimensional problem to unidimensional one using: x_{k+1} =  x_{k} - a*grad(x_{k})
+        # Find the value of a (\alpha) that optimize the function (now unidimensional)
+        a = zeros(itermax+1)
+        i = 0
+        while (i < itermax):
+            x_k   = xsol[k,:] - a[i]*S
+            # Evaluate the 1st & 2nd order derivatives for the unidimensional function f(a)
+            fa        = function(x_k)
+            f_h_plus  = function(xsol[k,:] - (a[i]+diffRes)*S)
+            f_h_minus = function(xsol[k,:] - (a[i]-diffRes)*S)
+            firstDerivative = (f_h_plus-f_h_minus)/(2*diffRes)
+            secondDerivative = (f_h_plus+f_h_minus-2*fa)/(diffRes**2)
+
+            a[i+1] = a[i] - firstDerivative/(secondDerivative+1e-4)
+            i = i+1
+            if (abs(a[i]-a[i-1]) <= tol):
+                break
+        alpha = a[i]
+
 
         # Update the initial guess value (x0 & y0)
-        xsol[k+1,:] = xsol[k,:] - alpha*dot(inv(d2f_k),df_k)
+        xsol[k+1,:] = xsol[k,:] - alpha*S
         k = k+1
 
         if ( (sum(abs(xsol[k,:] - xsol[k-1,:])) <= tol) and (not runitermax) ):
             solution = xsol[k,:]
             break
-
     else:
         solution = xsol
 
     return solution
 
 
-def levenbergMarquardt2D(function,x0,lamb0=0,tol=1e-3,itermax=100,runitermax=False):
-    from sympy.abc import x, y, a
-    f   = function(x=x,y=y)
-    df  = [f.diff(x), f.diff(y)]
-    d2f = [ [f.diff(x,2), f.diff(x,y)] , [f.diff(y,x), f.diff(y,2)] ]
-    f   = lambdify([x,y],f,"numpy")
-    df  = [lambdify([x,y],df[0],"numpy"), lambdify([x,y],df[1],"numpy")]
-    d2f = [ [lambdify([x,y],d2f[0][0],"numpy"), lambdify([x,y],d2f[0][1],"numpy")], [lambdify([x,y],d2f[1][0],"numpy"), lambdify([x,y],d2f[1][1],"numpy")] ] 
+def levenbergMarquardt2D(function,x0,lamb0=0,tol=1e-3,itermax=100,runitermax=False,diffRes=1e-4):
+    nVar = len(x0)
+    hess = zeros((itermax+1,nVar,nVar))
+    grad = zeros((itermax+1,nVar))
+    xsol = zeros((itermax+1,nVar))
+    xsol[0,:] = x0
 
     lamb = zeros((itermax+1,))
     lamb[0] = lamb0
@@ -237,21 +280,33 @@ def levenbergMarquardt2D(function,x0,lamb0=0,tol=1e-3,itermax=100,runitermax=Fal
         print('\n Starting ' + str(k+1) + '° iteration: ')
 
         # Calculate the gradient & hassian of the function for x[k]
-        df_k  = array([ df[0](xsol[k,0],xsol[k,1]),  df[1](xsol[k,1],xsol[k,1]) ])
-        d2f_k = array([ [d2f[0][0](xsol[k,0],xsol[k,1]), d2f[0][1](xsol[k,0],xsol[k,1])], [d2f[1][0](xsol[k,0],xsol[k,1]), d2f[1][1](xsol[k,0],xsol[k,1])] ])
+        grad[k,:], hess[k,:,:] = finiteDiff(function,xsol[k,:],h=1e-4)
+        S = dot( (inv(hess[k,:,:]) + lamb[k]*eye(nVar)) , grad[k,:] )
 
-        # Create parametric function f = f(a) = f( x0 - a*df/dx|x0, y0 - a*df/dy|y0 )
-        x_k = xsol[k,0] - a*dot(( inv(d2f_k) + lamb[k]*identity(2) ), df_k)
-        fn_symb = f( x_k[0], x_k[1] )
-        fn = lambdify(a,fn_symb,"numpy")
 
-        # Optimize the function fn for \alhpa (a)
-        a_optimal, __, __, __ = Newton(function=fn,x0=0,tol=tol,N=itermax,h=1e-4)
-        alpha = a_optimal[0]
+        # Change multidimensional problem to unidimensional one using: x_{k+1} =  x_{k} - a*grad(x_{k})
+        # Find the value of a (\alpha) that optimize the function (now unidimensional)
+        a = zeros(itermax+1)
+        i = 0
+        while (i < itermax):
+            x_k   = xsol[k,:] - a[i]*S
+            # Evaluate the 1st & 2nd order derivatives for the unidimensional function f(a)
+            fa        = function(x_k)
+            f_h_plus  = function(xsol[k,:] - (a[i]+diffRes)*S)
+            f_h_minus = function(xsol[k,:] - (a[i]-diffRes)*S)
+            firstDerivative = (f_h_plus-f_h_minus)/(2*diffRes)
+            secondDerivative = (f_h_plus+f_h_minus-2*fa)/(diffRes**2)
+
+            a[i+1] = a[i] - firstDerivative/(secondDerivative+1e-4)
+            i = i+1
+            if (abs(a[i]-a[i-1]) <= tol):
+                break
+        alpha = a[i]
+
 
         # Update the initial guess value (x0 & y0)
-        xsol[k+1,:] = xsol[k,:] - alpha*dot(( inv(d2f_k) + lamb[k]*identity(2) ), df_k)
-        lamb[k+1]   = abs( f(xsol[k+1,0],xsol[k+1,1]) -  f(xsol[k,0],xsol[k,1]) )/abs( f(xsol[k,0],xsol[k,1]) )
+        xsol[k+1,:] = xsol[k,:] - alpha*S
+        lamb[k+1]   = abs( function(xsol[k+1,:]) -  function(xsol[k,:]) ) / abs( function(xsol[k,:]) )
         k = k+1
 
         if ( (sum(abs(xsol[k,:] - xsol[k-1,:])) <= tol) and (not runitermax) ):
@@ -265,29 +320,5 @@ def levenbergMarquardt2D(function,x0,lamb0=0,tol=1e-3,itermax=100,runitermax=Fal
 
 
 
-"""
-sol = powell(sphere,x0=[-5, 5],tol=1e-3,itermax=100,runitermax=True)
-print('\n',sol,'\n')
-"""
-
-
-"""
-sol = maximaDescida(sphere,x0=[5, 5],tol=1e-3,itermax=100)
-print('\n',sol,'\n')
-"""
-
-"""
-sol = direcoesConjugadas(beale,x0=[5, 5],tol=1e-3,itermax=50,runitermax=True)
-print('\n',sol,'\n')
-"""
-
-
-"""
-sol = newton2D(sphere,x0=[5, 5],tol=1e-3,itermax=10,runitermax=True)
-print('\n',sol,'\n')
-"""
-
-"""
-sol = levenbergMarquardt2D(sphere,x0=[5, 5],lamb0=0,tol=1e-3,itermax=100,runitermax=True)
-print('\n',sol,'\n')
-"""
+sol = powell(sphere,[5., 5.],tol=1e-3,itermax=10,runitermax=True)
+print(sol)
